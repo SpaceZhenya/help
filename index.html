@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Live Realtime Translator 🌍</title>
+<title>Live Translator GitHub Pages 🌍</title>
 <style>
 body { font-family: Arial; background: #f2f2f2; padding: 20px; }
 h1 { color: #2c3e50; }
@@ -15,7 +15,7 @@ select, button { padding: 10px; margin: 5px; }
 </style>
 </head>
 <body>
-<h1>Live Realtime Translator 🌍</h1>
+<h1>Live Translator 🌍</h1>
 
 <label>Язык 1:</label>
 <select id="lang1">
@@ -51,11 +51,13 @@ const outputDiv = document.getElementById('translations');
 const lang1Select = document.getElementById('lang1');
 const lang2Select = document.getElementById('lang2');
 
-let langMap = {};
-langMap[lang1Select.value] = lang2Select.value;
-langMap[lang2Select.value] = lang1Select.value;
+let activeLang = lang1Select.value;
 
-start.onclick = () => recognition.start();
+start.onclick = () => {
+  recognition.lang = activeLang + '-' + activeLang.toUpperCase();
+  recognition.start();
+};
+
 stop.onclick = () => recognition.stop();
 
 async function translateText(text, source, target){
@@ -69,13 +71,13 @@ recognition.onresult = async (event) => {
   const text = event.results[event.results.length - 1][0].transcript.trim();
   if(!text) return;
 
-  // Определяем язык по символам
-  let detectedLang = /[а-яА-ЯЁё]/.test(text) ? lang1Select.value : lang2Select.value;
-  let targetLang = langMap[detectedLang];
+  // Определяем язык по селектору
+  const detectedLang = activeLang;
+  const targetLang = (detectedLang === lang1Select.value) ? lang2Select.value : lang1Select.value;
 
   const translation = await translateText(text, detectedLang, targetLang);
 
-  // Вывод в чат
+  // Вывод на экран
   const entry = document.createElement('div');
   entry.classList.add('entry');
   entry.innerHTML = `<div class="inputText">${text} (${detectedLang})</div>
