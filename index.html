@@ -2,22 +2,41 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>GitHub Pages Translator</title>
+<title>Live Realtime Translator 🌍</title>
 <style>
 body { font-family: Arial; background: #f2f2f2; padding: 20px; }
 h1 { color: #2c3e50; }
-button { padding: 10px; margin: 5px; }
-#output { margin-top: 20px; background: #fff; padding: 15px; border-radius: 10px; max-height: 300px; overflow-y: auto; }
+select, button { padding: 10px; margin: 5px; }
+#translations { margin-top: 20px; background: #fff; padding: 15px; border-radius: 10px; max-height: 400px; overflow-y: auto; }
 .entry { margin-bottom: 10px; }
 .inputText { color: #34495e; }
 .translatedText { color: #27ae60; font-weight: bold; }
+.copy-btn { margin-left: 10px; padding: 2px 5px; font-size: 12px; }
 </style>
 </head>
 <body>
-<h1>Translator GitHub Pages Ready 🌍</h1>
-<button id="start">Начать распознавание</button>
+<h1>Live Realtime Translator 🌍</h1>
+
+<label>Язык 1:</label>
+<select id="lang1">
+  <option value="ru">Русский</option>
+  <option value="en">Английский</option>
+  <option value="fr">Французский</option>
+  <option value="es">Испанский</option>
+</select>
+
+<label>Язык 2:</label>
+<select id="lang2">
+  <option value="en">Английский</option>
+  <option value="ru">Русский</option>
+  <option value="fr">Французский</option>
+  <option value="es">Испанский</option>
+</select>
+
+<button id="start">Начать</button>
 <button id="stop">Стоп</button>
-<div id="output"></div>
+
+<div id="translations"></div>
 
 <script>
 if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
@@ -28,29 +47,45 @@ const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognit
 recognition.continuous = true;
 recognition.interimResults = false;
 
-const outputDiv = document.getElementById('output');
-let activeLang = 'ru-RU';
-recognition.lang = activeLang;
+const outputDiv = document.getElementById('translations');
+const lang1Select = document.getElementById('lang1');
+const lang2Select = document.getElementById('lang2');
 
-document.getElementById('start').onclick = () => recognition.start();
-document.getElementById('stop').onclick = () => recognition.stop();
+let langMap = {};
+langMap[lang1Select.value] = lang2Select.value;
+langMap[lang2Select.value] = lang1Select.value;
 
-recognition.onresult = (event) => {
-  const text = event.results[event.results.length - 1][0].transcript;
+start.onclick = () => recognition.start();
+stop.onclick = () => recognition.stop();
 
-  // Простейший «перевод» (только для демонстрации)
-  const translation = text.split('').reverse().join('');
+async function translateText(text, source, target){
+  const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${source}|${target}`;
+  const response = await fetch(url);
+  const data = await response.json();
+  return data.responseData.translatedText;
+}
 
-  // Вывод в HTML
+recognition.onresult = async (event) => {
+  const text = event.results[event.results.length - 1][0].transcript.trim();
+  if(!text) return;
+
+  // Определяем язык по символам
+  let detectedLang = /[а-яА-ЯЁё]/.test(text) ? lang1Select.value : lang2Select.value;
+  let targetLang = langMap[detectedLang];
+
+  const translation = await translateText(text, detectedLang, targetLang);
+
+  // Вывод в чат
   const entry = document.createElement('div');
   entry.classList.add('entry');
-  entry.innerHTML = `<div class="inputText">Оригинал: ${text}</div>
-                     <div class="translatedText">Перевод: ${translation}</div>`;
+  entry.innerHTML = `<div class="inputText">${text} (${detectedLang})</div>
+                     <div class="translatedText">${translation} (${targetLang})
+                     <button class="copy-btn" onclick="navigator.clipboard.writeText('${translation}')">Копировать</button></div>`;
   outputDiv.prepend(entry);
 
   // Озвучивание перевода
   const utter = new SpeechSynthesisUtterance(translation);
-  utter.lang = activeLang;
+  utter.lang = targetLang + '-' + targetLang.toUpperCase();
   speechSynthesis.speak(utter);
 };
 </script>
