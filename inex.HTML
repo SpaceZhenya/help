@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>GitHub Pages Translator</title>
+<style>
+body { font-family: Arial; background: #f2f2f2; padding: 20px; }
+h1 { color: #2c3e50; }
+button { padding: 10px; margin: 5px; }
+#output { margin-top: 20px; background: #fff; padding: 15px; border-radius: 10px; max-height: 300px; overflow-y: auto; }
+.entry { margin-bottom: 10px; }
+.inputText { color: #34495e; }
+.translatedText { color: #27ae60; font-weight: bold; }
+</style>
+</head>
+<body>
+<h1>Translator GitHub Pages Ready 🌍</h1>
+<button id="start">Начать распознавание</button>
+<button id="stop">Стоп</button>
+<div id="output"></div>
+
+<script>
+if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+  alert("Ваш браузер не поддерживает SpeechRecognition. Используйте Chrome или Edge.");
+}
+
+const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+recognition.continuous = true;
+recognition.interimResults = false;
+
+const outputDiv = document.getElementById('output');
+let activeLang = 'ru-RU';
+recognition.lang = activeLang;
+
+document.getElementById('start').onclick = () => recognition.start();
+document.getElementById('stop').onclick = () => recognition.stop();
+
+recognition.onresult = (event) => {
+  const text = event.results[event.results.length - 1][0].transcript;
+
+  // Простейший «перевод» (только для демонстрации)
+  const translation = text.split('').reverse().join('');
+
+  // Вывод в HTML
+  const entry = document.createElement('div');
+  entry.classList.add('entry');
+  entry.innerHTML = `<div class="inputText">Оригинал: ${text}</div>
+                     <div class="translatedText">Перевод: ${translation}</div>`;
+  outputDiv.prepend(entry);
+
+  // Озвучивание перевода
+  const utter = new SpeechSynthesisUtterance(translation);
+  utter.lang = activeLang;
+  speechSynthesis.speak(utter);
+};
+</script>
+</body>
+</html>
